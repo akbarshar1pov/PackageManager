@@ -53,6 +53,7 @@ def get_package_deps(url):
 # Строим структуру зависимостей пакета
 def get_package_graph(name):
     graph = {}
+
     def rec(name):
         print(name)
         graph[name] = set()
@@ -64,6 +65,7 @@ def get_package_graph(name):
             graph[name].add(d)
             if d not in graph:
                 rec(d)
+
     rec(name)
     return graph
 
@@ -79,19 +81,14 @@ def gv(graph):
 
 
 #################################################################
-# Что ещё умеет делать pip
-# Пробежимся по основным командам pip:
 
-install_help = "pip install package_name - установка пакета(ов)\n" \
-               "pip install -U - обновление пакета(ов).\n" \
-               "pip install --force-reinstall - при обновлении, переустановить пакет, " \
-               "даже если он последней версии.\n"
+install_help = "pip install package_name - установка пакета(ов)\n"
 
 pip_help = "pip help - помощь по доступным командам.\n%s" \
-       "pip uninstall package_name - удаление пакета(ов).\n" \
-       "pip list - список установленных пакетов.\n" \
-       "pip show package_name - показывает информацию об установленном пакете.\n" \
-       "pip search - поиск пакетов по имени." % install_help
+           "pip uninstall package_name - удаление пакета(ов).\n" \
+           "pip list - список установленных пакетов.\n" \
+           "pip show package_name - показывает информацию об установленном пакете.\n" \
+           "pip search - поиск пакетов по имени." % install_help
 
 pip_commands = ["help", "install", "uninstall", "list", "show", "search", ]
 install_arguments = ["-U", "--force-reinstall"]
@@ -99,11 +96,15 @@ install_arguments = ["-U", "--force-reinstall"]
 
 def install_pip(packages):
     installed_packages = list_pip()
-    if packages in installed_packages:
-        to_do = input("Павет уже установлен, проверит на наличия зависимостей (Y/n): ")
-        if not(to_do == 'y' or to_do == 'Y'):
-            return
+    for j in packages:
+        for i in installed_packages:
+            if j == i.split('-')[0]:
+                to_do = input("Павет уже установлен, проверит на наличия зависимостей (Y/n): ")
+                if not (to_do == 'y' or to_do == 'Y'):
+                    return
+
     packages_list = {}
+
     def rec(name):
         packages_list[name] = set()
         url = get_package_url(name)
@@ -114,15 +115,16 @@ def install_pip(packages):
             packages_list[name].add(d)
             if d not in packages_list:
                 rec(d)
+
     for i in packages:
         rec(i)
     for i in packages_list:
         if i not in installed_packages:
             url = get_package_url(i)
-            print(i)
             data = requests.get(url)
-            name = "" + url
-            open('install_packages/%s' % name.split('#')[0].split('/')[-1].casefold(), 'wb').write(data.content)
+            name = ("" + url).split('#')[0].split('/')[-1].casefold()
+            open('install_packages/%s' % name, 'wb').write(data.content)
+            print(name + '\t[%i bytes]' % os.path.getsize('install_packages/%s' % name))
         else:
             print(i + " уже установлен")
 
@@ -174,16 +176,6 @@ def search_pip(name):
     else:
         print("Пакет не установлен. Для установки восползуйтейс командой: pip install %s" % name)
 
-#
-# def upgrade_pip():
-#     print("upgrade")
-#
-#
-# def full_upgrade_pip():
-#     print("full_upgrade")
-#
-#
-
 
 def do(command):
     i = 2
@@ -192,14 +184,7 @@ def do(command):
         packages.append(command.split()[i])
         i += 1
     if command.split()[1] == 'install':
-        if command.split()[2] not in install_arguments:
-            install_pip(packages)
-        elif command.split()[2] == '-U' and len(command.split()) > 3:
-            print("-U")
-        elif command.split()[2] == '--force-reinstall' and len(command.split()) == 3:
-            print('--force-reinstall')
-        else:
-            print(install_help)
+        install_pip(packages)
     elif command.split()[1] == 'uninstall' and len(command.split()) >= 3:
         uninstall_pip(packages)
     elif command.split()[1] == 'list' and len(command.split()) == 2:
@@ -226,4 +211,6 @@ if __name__ == '__main__':
         else:
             print("Command is uncorrected")
             main()
+
+
     main()
