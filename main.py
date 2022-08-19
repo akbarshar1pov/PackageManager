@@ -7,14 +7,15 @@ import io
 
 from pip._vendor import requests
 
-# Загружаем данные с сылки
+# Loading data from a link
+
 def load(url):
     with urllib.request.urlopen(url) as f:
         data = f.read()
         return data
 
 
-# Берем ссылку на пакет
+# We take a link to the package
 def get_package_url(name):
     data = load('https://pypi.org/simple/%s/' % name)
     root = ET.fromstring(data)
@@ -32,7 +33,7 @@ def get_package_url(name):
     return package_whl_url
 
 
-# Загружаем зависимости пакета
+# Download package dependencies
 def get_package_deps(url):
     data = load(url)
     obj = io.BytesIO(data)
@@ -50,7 +51,7 @@ def get_package_deps(url):
     return deps
 
 
-# Строим структуру зависимостей пакета
+# Building the package dependency structure
 def get_package_graph(name):
     graph = {}
     def rec(name):
@@ -68,7 +69,7 @@ def get_package_graph(name):
     return graph
 
 
-# Строим текст для файла GraphViz
+# Building the text for the GraphViz file
 def gv(graph):
     lines = ["digraph G {"]
     for v1 in graph:
@@ -78,27 +79,28 @@ def gv(graph):
     return "\n".join(lines)
 
 
-# Часть кода для менеджера пакетов
-install_help = "pip install package_name - установка пакета(ов)\n"
+# Part of the code for the package manager
+install_help = "pip install package_name - installing package(s)\n"
 
-pip_help = "pip help - помощь по доступным командам.\n%s" \
-           "pip uninstall package_name - удаление пакета(ов).\n" \
-           "pip list - список установленных пакетов.\n" \
-           "pip show package_name - показывает информацию об установленном пакете.\n" \
-           "pip search - поиск пакетов по имени.\npip mgvf - (make graph viz file) для создания файла с " \
-           "завичимостьями для GraphWiz" % install_help
+pip_help = "pip help - help with available commands.\n%s" \
+           "pip uninstall package_name - removal of the package(s).\n" \
+           "pip list - list of installed packages.\n" \
+           "pip show package_name - shows information about the installed package.\n" \
+           "pip search -search for packages by name.\n" \
+           "pip mgvf - (make graph viz file) to create a file with " \
+           "dependencies for GraphWiz" % install_help
 
 pip_commands = ["help", "install", "uninstall", "list", "show", "search", "mgvf"]
 install_arguments = ["-U", "--force-reinstall"]
 
 
-# Установка(скачивания) пакетов и их зависимостей
+#Installing (downloading) packages and their dependencies
 def install_pip(packages):
     installed_packages = list_pip()
     for j in packages:
         for i in installed_packages:
             if j == i.split('-')[0]:
-                to_do = input("Павет уже установлен, проверит на наличия зависимостей (Y/n): ")
+                to_do = input("Pavet already installed, check for dependencies (Y/n): ")
                 if not (to_do == 'y' or to_do == 'Y'):
                     return
 
@@ -125,10 +127,10 @@ def install_pip(packages):
             open('install_packages/%s' % name, 'wb').write(data.content)
             print(name + '\t[%i bytes]' % os.path.getsize('install_packages/%s' % name))
         else:
-            print(i + " уже установлен")
+            print(i + " already installed")
 
 
-# Удаления пакета
+# Package removal
 def uninstall_pip(package):
     packages = list_pip()
     package_not_found = True
@@ -137,13 +139,13 @@ def uninstall_pip(package):
             if i in j:
                 if os.path.exists('install_packages/%s' % j):
                     os.remove('install_packages/%s' % j)
-                    print("Пакет был удалён!")
+                    print("The package has been removed!")
                     package_not_found = False
     if package_not_found:
-        print("Пакет не найден!")
+        print("Package not found!")
 
 
-# Вывод установленных пакетов
+# Listing installed packages
 def list_pip():
     install_package = os.listdir('install_packages/')
     packages = []
@@ -152,7 +154,7 @@ def list_pip():
     return packages
 
 
-# Вывод метта данных
+# Output metta data
 def show_pip(package):
     packages = list_pip()
     for i in packages:
@@ -174,20 +176,20 @@ def show_pip(package):
                     content = f.read().decode('utf-8')
                     print(content)
     else:
-        print("Пакет '%s' не установлен\n" % package)
+        print("Package '%s' not installed\n" % package)
 
 
-# Поиск пакета
+# Package search
 def search_pip(name):
     packages = list_pip()
     for i in packages:
         if name in i.split('-'):
-            print("Пакет установлен. Для получения осползуйтейс командой: pip show %s" % name)
+            print("The package is installed. To get run with the command: pip show %s" % name)
             return
-    print("Пакет не установлен. Для установки восползуйтейс командой: pip install %s" % name)
+    print("The package is not installed. To install, use the command: pip install %s" % name)
 
 
-# Создания файла для Graph Wiz
+# File creation for Graph Wiz
 def makeGraphVizFile(package):
     text = gv(get_package_graph(package))
     print(text)
@@ -195,7 +197,7 @@ def makeGraphVizFile(package):
     file.write(text)
 
 
-# Для определения команды
+# To define a command
 def do(command):
     i = 2
     packages = []
@@ -233,5 +235,4 @@ if __name__ == '__main__':
             print("Command is uncorrected")
             main()
 
-
-    main()
+main()
